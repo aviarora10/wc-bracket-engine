@@ -113,14 +113,15 @@
   <section class="col groups-col">
     <button class="rail" id="groupsRail" title="Toggle groups panel" aria-label="Toggle groups panel">▶</button>
     <span class="collapsed-label" id="groupsLabel">Groups · click to expand ▶</span>
-    <h2>Groups <small>Win % · adjust to override</small></h2>
+    <h2>Groups <small>Polymarket group-winner odds · click 1/2/3/4 to force a finish</small></h2>
     <div class="groups" id="groupsContainer"></div>
 
     <details>
       <summary>Inline notes</summary>
       <div class="help">
-        Each team's group-winning probability comes from Polymarket's "Group X Winner" market.
-        Drag a slider to manually override. Click a team's name to lock its finish (1st / 2nd / 3rd / out).
+        Each team's group-winning probability comes from Polymarket's "Group X Winner" market (or a fallback prior if the API is unreachable).
+        By default the simulator just uses those odds. To force a specific scenario, click <b>1</b> / <b>2</b> / <b>3</b> / <b>4</b>
+        next to a team to lock its group finish (1st / 2nd / 3rd / 4th); click the same button again to unlock.
         For full documentation, click the <b>README</b> button up top.
       </div>
     </details>
@@ -131,9 +132,7 @@
     <div class="legend">
       <span>Click match → see who can play it</span>
       <span>Each card: <b>reach%</b> (team appears here) · <b>win%</b> (team wins this match, overall)</span>
-      <span><b>◆</b> locked outcome</span>
-      <span><b style="color:var(--accent-2)">red</b> = live Polymarket</span>
-      <span><b style="color:var(--gold)">gold</b> = manual override</span>
+      <span>The favored team in each match (marked with <b style="color:var(--accent-2)">▸</b>) flows into the next round</span>
       <div class="view-controls">
         <button class="view-btn" id="viewLeft" title="Show left half only">◀ LEFT</button>
         <button class="view-btn active" id="viewFull" title="Show full bracket">FULL</button>
@@ -197,16 +196,17 @@
 
     <h2>What the controls do</h2>
     <ul>
-      <li><b>Group sliders:</b> Drag any team's slider to override their strength (0–100). Useful for "what if Germany is in great form?"
-          scenarios. Manual overrides are marked with a gold <code>M</code> badge.</li>
-      <li><b>Lock a team's finish:</b> Click a team's name to cycle: 1st → RU → 3rd → out → none. Locks force that team to that
-          group placement in every simulation. Marked with a red <code>◆</code>.</li>
+      <li><b>Lock a team's group finish:</b> Click <b>1</b> / <b>2</b> / <b>3</b> / <b>4</b> next to any team to lock that team to
+          that group placement (1st / 2nd / 3rd / 4th) in every simulation. Click the same button again to unlock. Each placement is
+          unique within a group, so locking a new team to a placement clears the previous holder. By default no team is locked and
+          the simulator just uses the Polymarket odds.</li>
       <li><b>Force a match winner:</b> Click any bracket match to open its detail panel, then use the "Force winner" buttons to
           lock a team to win that match. The downstream bracket re-simulates with that constraint.</li>
       <li><b>Variance:</b> 0.5 = maximum chaos (Cape Verde might really beat Spain). 1.0 = pure odds. 0.85 (default) is a
           historically calibrated middle ground for knockout football.</li>
-      <li><b>Sims:</b> More sims = more precise probabilities, slower re-render. 10k is usually enough; 50k+ for fine-grained tail estimates.</li>
-      <li><b>Refetch odds:</b> Pulls the latest Polymarket prices without resetting your manual overrides or locks.</li>
+      <li><b>Sims:</b> More sims = more precise probabilities, slower re-render. 50k (default) is good for general use; 100k for
+          fine-grained tail estimates.</li>
+      <li><b>Refetch odds:</b> Pulls the latest Polymarket prices without clearing your locks.</li>
       <li><b>Reset all:</b> Wipes overrides and locks, refetches live odds, re-runs the sim from scratch.</li>
     </ul>
 

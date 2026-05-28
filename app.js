@@ -16,7 +16,7 @@ function initState(){
       state.teams[t] = {
         group:g,
         strength: FALLBACK_GROUP_WIN_PCT[g][t] || 25,
-        override:false, lock:null, oddsSource:'fallback'
+        lock:null, oddsSource:'fallback'
       };
     });
   }
@@ -63,7 +63,7 @@ async function fetchPolymarketOdds(){
         const matched = (NAME_ALIASES[nname] && GROUPS[g].includes(NAME_ALIASES[nname]))
           ? NAME_ALIASES[nname]
           : GROUPS[g].find(t => normalize(t) === nname || normalize(t).includes(nname) || nname.includes(normalize(t)));
-        if(matched && state.teams[matched] && !state.teams[matched].override){
+        if(matched && state.teams[matched]){
           state.teams[matched].strength = yesPrice * 100;
           state.teams[matched].oddsSource = 'live';
           pulled++;
@@ -278,59 +278,46 @@ function renderGroups(){
   c.innerHTML = '';
   for(const g of Object.keys(GROUPS)){
     const teams = GROUPS[g];
-    const groupEl = document.createElement('div');
-    groupEl.className = 'group';
-    const finish = state.simResults?.groupFinish?.[g];
-    const N = state.simResults?.N || 1;
-    let teamsHtml = teams.map(t => {
+    // Per-group source label: live if every team has live odds, fallback if none, mixed otherwise.
+    const liveCount = teams.filter(t => state.teams[t].oddsSource === 'live').length;
+    const grpSrc = liveCount === teams.length ? 'live' : liveCount > 0 ? 'mixed' : 'fallback';
+    // Order favorites → weakest so the table reads naturally.
+    const ordered = [...teams].sort((a,b) => state.teams[b].strength - state.teams[a].strength);
+    const teamsHtml = ordered.map(t => {
       const ts = state.teams[t];
-      const f = finish?.[t];
-      const winPct = f ? (f[1]/N*100).toFixed(0) : '—';
-      const finishSummary = f ? `${(f[1]/N*100).toFixed(0)}·${(f[2]/N*100).toFixed(0)}·${(f[3]/N*100).toFixed(0)}` : '';
-      const lockMark = ts.lock ? `<span class="pill locked">${ts.lock}</span>` : '';
-      const srcMark = ts.override ? `<span class="pill manual">M</span>` : (ts.oddsSource==='live' ? `<span class="pill live">L</span>` : '');
+      const pct = ts.strength.toFixed(0);
+      const btn = (place, num, label) => `
+        <button class="lock-btn ${ts.lock===place?'active':''}" data-team="${t}" data-place="${place}" title="${label}">${num}</button>`;
       return `
-        <div class="team ${ts.lock?'locked':''}">
-          <span class="team-name" data-team="${t}" style="cursor:pointer">${t}${lockMark}${srcMark}</span>
-          <input class="team-slider" type="range" min="0" max="100" step="1" value="${ts.strength.toFixed(1)}" data-team="${t}">
-          <span class="team-prob" title="Win·RU·3rd %">${finishSummary || winPct}</span>
-        </div>
-      `;
+        <span class="team-name">${t}</span>
+        <span class="team-prob" title="Polymarket group-winner odds (or fallback prior)">${pct}%</span>
+        <div class="lock-btns">
+          ${btn('W',  1, `Lock ${t} as 1st (group winner)`)}
+          ${btn('RU', 2, `Lock ${t} as 2nd (runner-up)`)}
+          ${btn('3',  3, `Lock ${t} as 3rd`)}
+          ${btn('out',4, `Lock ${t} as 4th (eliminated)`)}
+        </div>`;
     }).join('');
-    groupEl.innerHTML = `
-      <div class="group-head">
-        <span class="group-name">Group <b>${g}</b></span>
-        <span class="group-src">${state.fetchStatus}</span>
-      </div>
-      <div class="teams">${teamsHtml}</div>
-    `;
-    c.appendChild(groupEl);
+    c.insertAdjacentHTML('beforeend', `
+      <div class="group">
+        <div class="group-head">
+          <span class="group-name">Group <b>${g}</b></span>
+          <span class="group-src">${grpSrc}</span>
+        </div>
+        <div class="teams">${teamsHtml}</div>
+      </div>`);
   }
-  // Bind sliders
-  c.querySelectorAll('input.team-slider').forEach(inp => {
-    inp.addEventListener('input', e => {
-      const t = e.target.dataset.team;
-      state.teams[t].strength = parseFloat(e.target.value);
-      state.teams[t].override = true;
-    });
-    inp.addEventListener('change', () => { runSim(); renderAll(); });
-  });
-  // Bind team-name click → cycle lock
-  c.querySelectorAll('.team-name').forEach(el => {
-    el.addEventListener('click', e => {
-      const t = e.target.closest('.team-name').dataset.team;
-      const cycle = [null,'W','RU','3','out'];
-      const cur = state.teams[t].lock;
-      state.teams[t].lock = cycle[(cycle.indexOf(cur)+1) % cycle.length];
-      // If we set a W/RU/3/out, clear other locks in the same group (only one team can hold each place)
-      if(state.teams[t].lock){
-        const place = state.teams[t].lock;
-        const g = state.teams[t].group;
-        GROUPS[g].forEach(other => {
-          if(other !== t && state.teams[other].lock === place){
-            state.teams[other].lock = null;
-          }
-        });
+  // Lock button: click to lock that team to that group placement; click the same
+  // button again to unlock. Only one team per group can hold each placement, so
+  // setting one clears any other team in the same group that held it.
+  c.querySelectorAll('.lock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.team, place = btn.dataset.place, g = state.teams[t].group;
+      if(state.teams[t].lock === place){
+        state.teams[t].lock = null;
+      } else {
+        GROUPS[g].forEach(o => { if(o !== t && state.teams[o].lock === place) state.teams[o].lock = null; });
+        state.teams[t].lock = place;
       }
       runSim(); renderAll();
     });
@@ -785,7 +772,7 @@ document.getElementById('resetAll').addEventListener('click', ()=>{
   fetchPolymarketOdds().then(()=>{ runSim(); renderAll(); });
 });
 document.getElementById('refetchBtn').addEventListener('click', ()=>{
-  Object.values(state.teams).forEach(t => { if(!t.override) t.oddsSource='fallback'; });
+  Object.values(state.teams).forEach(t => { t.oddsSource = 'fallback'; });
   fetchPolymarketOdds().then(()=>{ runSim(); renderAll(); });
 });
 // Variance slider — show live value, debounce re-sim

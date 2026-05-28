@@ -127,12 +127,17 @@
   .group-src{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase}
   .teams{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;align-items:center}
   .team-name{font-size:13px;font-weight:600}
-  .team-prob{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right;width:36px}
-  .team-slider{width:80px;height:4px;-webkit-appearance:none;appearance:none;background:rgba(0,0,0,.1);border-radius:0;outline:none}
-  .team-slider::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:14px;background:var(--ink);border-radius:0;cursor:pointer}
-  .team-slider::-moz-range-thumb{width:10px;height:14px;background:var(--ink);border:0;border-radius:0;cursor:pointer}
-  .team.locked .team-name::before{content:"◆ ";color:var(--accent-2)}
-  .team-finish{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase}
+  .team-prob{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right;width:34px}
+  /* 1/2/3/4 buttons that lock a team to a specific group finish.
+     Active button is the red accent so the locked placement is obvious at a glance. */
+  .lock-btns{display:flex;gap:2px}
+  .lock-btn{
+    width:22px;height:22px;padding:0;border:1px solid var(--line);background:var(--paper);
+    color:var(--muted);font-family:'DM Mono',monospace;font-size:11px;font-weight:600;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .lock-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .lock-btn.active{background:var(--accent-2);color:var(--paper);border-color:var(--accent-2)}
 
   /* ============================================================
      BRACKET — March Madness-style layout

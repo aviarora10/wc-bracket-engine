@@ -29,11 +29,10 @@ app.js        logic: Polymarket fetch, Monte Carlo simulation, rendering, contro
 
 ## Controls
 
-- **Group sliders** — override any team's strength.
-- **Lock a finish** — click a team name to force its group placement (1st / RU / 3rd / out).
+- **Lock a group finish** — click the **1 / 2 / 3 / 4** buttons next to a team to force its group placement (1st / 2nd / 3rd / 4th) in every sim. Click the same button again to unlock.
 - **Force a match winner** — open a match and lock a team to win it; the downstream bracket re-simulates.
 - **Variance / Sims** — tune chaos vs. chalk, and precision vs. speed.
-- **Refetch odds** — pull the latest Polymarket prices without losing your overrides.
+- **Refetch odds** — pull the latest Polymarket prices without clearing your locks.
 
 ## Deploy for free
 
