@@ -1,0 +1,328 @@
+:root{
+    --ink:#0a0f1c;
+    --paper:#f5f1e8;
+    --paper-2:#ede6d3;
+    --line:#1a2236;
+    --accent:#00ff85;
+    --accent-2:#ff3d2e;
+    --gold:#d4a017;
+    --muted:#5b6478;
+    --shadow: 0 1px 0 var(--line);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'Fraunces',serif;font-size:15px;line-height:1.4}
+  body{
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,255,133,.08), transparent 40%),
+      radial-gradient(circle at 90% 90%, rgba(255,61,46,.06), transparent 40%);
+    min-height:100vh;
+  }
+  .grain::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.04;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+  header{
+    border-bottom:2px solid var(--ink);
+    padding:18px 24px 14px;
+    display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:end;
+    position:relative;z-index:2;
+  }
+  .wordmark{font-family:'Bowlby One',sans-serif;font-size:clamp(28px,4vw,52px);line-height:.85;letter-spacing:-.02em;text-transform:uppercase}
+  .wordmark span{color:var(--accent-2)}
+  .tag{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted)}
+  .status{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;text-align:right}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:middle}
+  .dot.live{background:var(--accent);box-shadow:0 0 0 0 rgba(0,255,133,.5);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 8px rgba(0,255,133,0)}}
+
+  main{display:grid;grid-template-columns:42px 1fr 42px;gap:0;min-height:calc(100vh - 92px);position:relative;z-index:2;transition:grid-template-columns .25s ease}
+  main.groups-open{grid-template-columns:340px 1fr 42px}
+  main.detail-open{grid-template-columns:42px 1fr 360px}
+  main.groups-open.detail-open{grid-template-columns:340px 1fr 360px}
+
+  /* Hide panel contents when collapsed; show only the rail + label */
+  main:not(.groups-open) .col.groups-col > *:not(.rail):not(.collapsed-label){display:none}
+  main:not(.detail-open) .col.detail-col > *:not(.rail):not(.collapsed-label){display:none}
+
+  /* Rail: the thin strip when collapsed, also where the open button lives */
+  .rail{
+    position:absolute;top:8px;width:28px;height:28px;
+    border:1px solid var(--line);background:var(--paper);
+    cursor:pointer;font-family:'DM Mono',monospace;font-size:14px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    line-height:1;padding:0;z-index:4;
+  }
+  .rail:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .col.groups-col .rail{right:6px}    /* open button on inner edge */
+  .col.detail-col .rail{left:6px}     /* open button on inner edge */
+
+  /* When OPEN, the rail button transforms into a small close button on the inner edge */
+  main.groups-open .col.groups-col .rail{right:6px}
+  main.detail-open .col.detail-col .rail{left:6px}
+
+  /* Collapsed label — vertical text on the rail */
+  .collapsed-label{display:none}
+  main:not(.groups-open) .col.groups-col,
+  main:not(.detail-open) .col.detail-col{padding:0;display:flex;flex-direction:column;align-items:center;overflow:hidden;position:relative}
+  main:not(.groups-open) .col.groups-col .collapsed-label,
+  main:not(.detail-open) .col.detail-col .collapsed-label{
+    display:block;font-family:'Bowlby One',sans-serif;font-size:11px;letter-spacing:.25em;
+    text-transform:uppercase;color:var(--muted);margin-top:46px;
+    writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;
+    cursor:pointer;
+  }
+  main:not(.groups-open) .col.groups-col .collapsed-label:hover,
+  main:not(.detail-open) .col.detail-col .collapsed-label:hover{color:var(--ink)}
+
+  /* README modal */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(10,15,28,.6);z-index:100;
+    display:none;align-items:center;justify-content:center;padding:20px;
+    backdrop-filter:blur(3px);
+  }
+  .modal-backdrop.open{display:flex}
+  .modal{
+    background:var(--paper);border:2px solid var(--ink);max-width:720px;width:100%;
+    max-height:88vh;overflow-y:auto;padding:32px 36px;position:relative;
+    box-shadow:8px 8px 0 var(--accent-2);
+  }
+  .modal-close{
+    position:absolute;top:12px;right:14px;width:32px;height:32px;
+    border:1px solid var(--ink);background:var(--paper);cursor:pointer;
+    font-family:'DM Mono',monospace;font-size:18px;display:flex;align-items:center;justify-content:center;
+  }
+  .modal-close:hover{background:var(--accent-2);color:var(--paper);border-color:var(--accent-2)}
+  .modal h1{font-family:'Bowlby One',sans-serif;font-size:32px;line-height:.9;margin:0 0 4px;text-transform:uppercase;letter-spacing:-.01em}
+  .modal h1 span{color:var(--accent-2)}
+  .modal .modal-sub{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.15em;color:var(--muted);margin-bottom:24px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .modal h2{font-family:'Bowlby One',sans-serif;font-size:14px;text-transform:uppercase;letter-spacing:.06em;margin:24px 0 8px;padding-top:8px;border-top:1px dotted var(--line)}
+  .modal h2:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  .modal p{font-family:'Fraunces',serif;font-size:14px;line-height:1.55;margin:0 0 10px;color:var(--ink)}
+  .modal ul{font-family:'Fraunces',serif;font-size:14px;line-height:1.55;padding-left:20px;margin:6px 0 10px}
+  .modal li{margin-bottom:6px}
+  .modal code{font-family:'DM Mono',monospace;font-size:12px;background:var(--paper-2);padding:1px 5px;border:1px solid var(--line)}
+  .modal b{font-weight:600}
+  .modal .kbd{font-family:'DM Mono',monospace;font-size:11px;background:var(--ink);color:var(--paper);padding:2px 6px;letter-spacing:.05em}
+  .modal a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--accent-2);text-decoration-thickness:2px;text-underline-offset:2px}
+  .readme-btn{
+    font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+    border:1px solid var(--ink);background:var(--paper);padding:5px 10px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .readme-btn:hover{background:var(--accent);border-color:var(--accent)}
+  .readme-btn::before{content:"❓";font-size:11px}
+  @media (max-width:1200px){main{grid-template-columns:1fr;}}
+
+  .col{padding:18px 20px;border-right:1px solid var(--line);position:relative}
+  .col:last-child{border-right:0;border-left:1px solid var(--line)}
+  .col h2{font-family:'Bowlby One',sans-serif;text-transform:uppercase;font-size:14px;letter-spacing:.06em;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline}
+  .col h2 small{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:.1em}
+
+  /* Groups */
+  .groups{display:flex;flex-direction:column;gap:8px}
+  .group{border:1px solid var(--line);background:var(--paper-2);padding:10px 12px}
+  .group-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .group-name{font-family:'Bowlby One',sans-serif;font-size:13px;letter-spacing:.05em}
+  .group-name b{color:var(--accent-2)}
+  .group-src{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase}
+  .teams{display:grid;grid-template-columns:1fr auto auto;gap:4px 8px;align-items:center}
+  .team-name{font-size:13px;font-weight:600}
+  .team-prob{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right;width:36px}
+  .team-slider{width:80px;height:4px;-webkit-appearance:none;appearance:none;background:rgba(0,0,0,.1);border-radius:0;outline:none}
+  .team-slider::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:14px;background:var(--ink);border-radius:0;cursor:pointer}
+  .team-slider::-moz-range-thumb{width:10px;height:14px;background:var(--ink);border:0;border-radius:0;cursor:pointer}
+  .team.locked .team-name::before{content:"◆ ";color:var(--accent-2)}
+  .team-finish{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase}
+
+  /* ============================================================
+     BRACKET — March Madness-style layout
+     ============================================================ */
+  .center{padding:18px 16px;overflow:auto;background:
+    linear-gradient(to bottom, var(--paper) 0%, var(--paper-2) 50%, var(--paper) 100%);
+    position:relative;
+  }
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:14px;padding:0 6px;align-items:center}
+  .legend b{color:var(--ink);font-weight:500}
+
+  /* View-mode controls (mobile half toggle, desktop fit toggle) */
+  .view-controls{
+    display:flex;gap:6px;margin-left:auto;align-items:center;
+  }
+  .view-btn{
+    font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+    border:1px solid var(--line);background:var(--paper);padding:4px 8px;cursor:pointer;
+    color:var(--muted);
+  }
+  .view-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .view-btn:hover{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* The bracket viewport: contains the scaled bracket-wrap */
+  .bracket-viewport{
+    position:relative;
+    width:100%;
+    overflow:hidden;       /* desktop: scale instead of scroll */
+    min-height:920px;
+  }
+  .bracket-viewport.allow-scroll{overflow:auto}
+
+  /* The bracket is a 9-column grid (full mode) */
+  .bracket-wrap{
+    position:relative;
+    width:1400px;          /* natural design width */
+    transform-origin: top left;
+    transition: transform .2s ease;
+  }
+  .bracket-grid{
+    display:grid;
+    grid-template-columns: 1.05fr .95fr .95fr .95fr 1.15fr .95fr .95fr .95fr 1.05fr;
+    gap:0;
+    align-items:stretch;
+    position:relative;
+  }
+
+  /* Mobile half-view: hide one side of the bracket */
+  .bracket-wrap.show-left,
+  .bracket-wrap.show-right{width:760px}
+  .bracket-wrap.show-left  .bracket-grid,
+  .bracket-wrap.show-right .bracket-grid{grid-template-columns:repeat(5, 1fr)}
+  .bracket-wrap.show-left  .round-col:nth-child(n+6),
+  .bracket-wrap.show-right .round-col:nth-child(-n+4){display:none}
+  .round-col{display:flex;flex-direction:column;justify-content:space-around;padding:8px 6px;min-height:920px;position:relative}
+  .round-col .round-label{
+    font-family:'Bowlby One',sans-serif;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    text-align:center;border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:8px;
+    position:absolute;top:-2px;left:6px;right:6px;
+  }
+  .round-col.final-col{justify-content:center}
+
+  /* Match card — compact with two slots */
+  .match{
+    border:1px solid var(--line);background:var(--paper);
+    padding:5px 7px;font-size:11px;cursor:pointer;
+    transition:transform .12s, box-shadow .12s;
+    position:relative;z-index:2;
+    box-shadow: 1px 1px 0 var(--line);
+  }
+  .match:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink);z-index:3}
+  .match.selected{background:var(--ink);color:var(--paper);box-shadow:3px 3px 0 var(--accent-2)}
+  .match.selected .m-meta,.match.selected .slot-prob,.match.selected .slot-team.tbd{color:var(--accent)}
+  .match.locked{border-color:var(--accent-2);border-width:2px}
+
+  .m-meta{font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between;margin-bottom:2px}
+  .slot{display:grid;grid-template-columns:1fr auto;gap:5px;padding:1px 0;font-family:'Fraunces',serif;align-items:center}
+  .slot + .slot{border-top:1px dotted rgba(0,0,0,.15)}
+  .slot-team{font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+  .slot-team.tbd{color:var(--muted);font-style:italic;font-weight:400;font-size:10px}
+  .slot-prob{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);font-weight:500}
+
+  /* Connection lines between rounds */
+  .match.has-feeder-r::after,
+  .match.has-feeder-l::before{
+    content:"";position:absolute;top:50%;width:14px;height:1px;background:var(--line);z-index:1;
+  }
+  .match.has-feeder-r::after{right:-14px}
+  .match.has-feeder-l::before{left:-14px}
+
+  /* Pair connector (vertical line linking 2 feeders into 1 next-round match) */
+  .pair-connector{position:absolute;width:1px;background:var(--line);right:0;z-index:1}
+  .pair-connector.left{right:-14px}
+  .pair-connector.right{left:-14px;right:auto}
+
+  /* Final match — bigger and centered */
+  .final-col .match{padding:12px 10px;background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--accent-2)}
+  .final-col .match .m-meta{color:var(--accent)}
+  .final-col .match .slot-team{font-size:14px}
+  .final-col .match .slot-prob{color:var(--accent);font-size:12px}
+  .final-col .match .slot-team.tbd{color:rgba(245,241,232,.4)}
+  .final-col .match.selected{background:var(--accent);color:var(--ink);box-shadow:4px 4px 0 var(--ink)}
+  .final-col .match.selected .m-meta,.final-col .match.selected .slot-prob{color:var(--ink)}
+
+  .trophy{text-align:center;font-family:'Bowlby One',sans-serif;font-size:11px;color:var(--gold);margin:8px 0;letter-spacing:.15em;text-transform:uppercase}
+
+  /* The win-prob bar inside each slot during later rounds */
+  .winbar{position:absolute;left:0;bottom:-1px;height:2px;background:var(--accent);transition:width .3s}
+  .slot{position:relative}
+
+  /* Right column - detail */
+  .empty-state{font-family:'Fraunces',serif;font-style:italic;color:var(--muted);font-size:14px;padding:20px 0}
+  .detail-title{font-family:'Bowlby One',sans-serif;font-size:18px;line-height:1;text-transform:uppercase;margin:0 0 4px}
+  .detail-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+  .ranklist{display:flex;flex-direction:column;gap:2px}
+  .rank-row{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:4px 6px;background:var(--paper-2);border:1px solid transparent}
+  .rank-row:hover{border-color:var(--line)}
+  .rank-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+  .rank-team{font-weight:600;font-size:13px}
+  .rank-bar-wrap{position:relative;height:18px;background:rgba(0,0,0,.04);width:100px}
+  .rank-bar{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
+  .rank-pct{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;position:absolute;right:4px;top:50%;transform:translateY(-50%);mix-blend-mode:difference;color:#fff}
+  .detail-section{margin-top:18px}
+  .detail-section h3{font-family:'Bowlby One',sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;color:var(--muted)}
+
+  .pairlist{display:flex;flex-direction:column;gap:1px;font-size:12px}
+  .pair{display:grid;grid-template-columns:1fr auto;background:var(--paper-2);padding:5px 8px;align-items:center;gap:6px}
+  .pair-teams{font-weight:600}
+  .pair-pct{font-family:'DM Mono',monospace;font-weight:500}
+
+  /* Controls bar */
+  .controls{padding:10px 24px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:var(--paper-2)}
+  button.btn{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;border:1px solid var(--ink);background:var(--paper);padding:5px 10px;cursor:pointer;transition:background .1s}
+  button.btn:hover{background:var(--ink);color:var(--paper)}
+  button.btn.primary{background:var(--ink);color:var(--paper)}
+  button.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+  .controls label{display:flex;gap:6px;align-items:center;cursor:pointer}
+  .controls input[type=number]{width:48px;padding:3px 5px;border:1px solid var(--ink);background:var(--paper);font-family:'DM Mono',monospace;font-size:11px}
+  .src-line{margin-left:auto;color:var(--muted)}
+  .src-line a{color:var(--ink)}
+
+  /* TBD pool list */
+  .tbd-list{font-size:11px;color:var(--muted);line-height:1.3}
+  .tbd-list b{color:var(--ink);font-weight:600}
+
+  details{margin-top:14px}
+  details summary{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);cursor:pointer;padding:4px 0;border-top:1px solid var(--line)}
+  details[open] summary{color:var(--ink)}
+  .help{font-size:12px;color:var(--muted);line-height:1.5;padding:6px 0}
+
+  .pill{display:inline-block;padding:1px 6px;font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--line);margin-left:6px}
+  .pill.live{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+  .pill.manual{background:var(--gold);border-color:var(--gold);color:var(--ink)}
+  .pill.locked{background:var(--accent-2);border-color:var(--accent-2);color:var(--paper)}
+
+  /* ============================================================
+     NARROW VIEWPORT LAYOUT — under HALF_VIEW_THRESHOLD (720px)
+     Bracket auto-switches to half-view via JS; here we just restack
+     the side panels and shrink chrome to make room.
+     ============================================================ */
+  @media (max-width: 720px){
+    header{grid-template-columns:1fr auto;gap:12px;padding:12px 14px 10px}
+    .wordmark{font-size:24px}
+    .status{font-size:9px}
+    .controls{gap:6px;padding:8px 10px;flex-wrap:wrap;font-size:9px}
+    .controls .src-line{display:none}
+    .controls input[type=number]{width:48px}
+    .controls input[type=range]{width:60px}
+
+    /* Stack panels under bracket; rails become full-width toggle bars */
+    main{grid-template-columns:1fr !important;grid-auto-rows:auto}
+    .col{border-right:none !important;border-left:none !important;border-bottom:1px solid var(--line)}
+    .col.groups-col,
+    .col.detail-col{order:99}  /* push panels below bracket on narrow */
+    .col.center{order:1}
+
+    main:not(.groups-open) .col.groups-col,
+    main:not(.detail-open) .col.detail-col{
+      writing-mode:initial;height:auto;min-height:32px;padding:6px 14px;
+      flex-direction:row;align-items:center;justify-content:flex-start
+    }
+    main:not(.groups-open) .col.groups-col .collapsed-label,
+    main:not(.detail-open) .col.detail-col .collapsed-label{
+      writing-mode:initial;transform:none;margin:0;font-size:10px
+    }
+    .rail{position:relative !important;top:auto !important;right:auto !important;left:auto !important;margin-left:auto !important}
+
+    /* Compact legend — keep only the view toggles */
+    .bracket-viewport{min-height:auto}
+    .legend{font-size:9px;gap:8px}
+    .legend > span:not(.view-controls):not(.view-controls *){display:none}
+    .view-controls{margin-left:0;width:100%;justify-content:center}
+  }

@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>WC26 · Bracket Probability Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body class="grain">
+<header>
+  <div class="wordmark">WC<span>26</span><br>Bracket<br>Engine</div>
+  <div>
+    <div class="tag">Probability sandbox · Polymarket-powered · 48 teams · 104 matches</div>
+    <div class="tag" style="margin-top:6px;color:var(--ink)">Adjust group sliders or lock outcomes — bracket re-simulates in real time</div>
+  </div>
+  <div class="status">
+    <div><span class="dot" id="statusDot"></span><span id="statusText">Loading odds…</span></div>
+    <div id="simStat" style="color:var(--muted);margin-top:4px"></div>
+  </div>
+</header>
+
+<div class="controls">
+  <button class="btn primary" id="resimBtn">⟳ Re-Simulate</button>
+  <label>Sims <input type="number" id="simCount" value="10000" min="500" max="100000" step="1000"></label>
+  <label>Variance <input type="range" id="varianceSlider" min="0.5" max="1" step="0.05" value="0.85" style="width:80px"><span id="varianceVal" style="font-family:'DM Mono',monospace;font-size:10px;min-width:30px">0.85</span></label>
+  <button class="btn" id="resetLocks">Clear locks</button>
+  <button class="btn" id="resetAll">Reset all</button>
+  <button class="btn" id="refetchBtn">↻ Refetch odds</button>
+  <button class="readme-btn" id="openReadme">Readme</button>
+  <span class="src-line">Live odds: <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket Gamma API</a></span>
+</div>
+
+<main>
+  <!-- LEFT: Groups (collapsed by default) -->
+  <section class="col groups-col">
+    <button class="rail" id="groupsRail" title="Toggle groups panel" aria-label="Toggle groups panel">▶</button>
+    <span class="collapsed-label" id="groupsLabel">Groups · click to expand ▶</span>
+    <h2>Groups <small>Win % · adjust to override</small></h2>
+    <div class="groups" id="groupsContainer"></div>
+
+    <details>
+      <summary>Inline notes</summary>
+      <div class="help">
+        Each team's group-winning probability comes from Polymarket's "Group X Winner" market.
+        Drag a slider to manually override. Click a team's name to lock its finish (1st / 2nd / 3rd / out).
+        For full documentation, click the <b>README</b> button up top.
+      </div>
+    </details>
+  </section>
+
+  <!-- CENTER: Bracket -->
+  <section class="col center">
+    <div class="legend">
+      <span>Click match → see who can play it</span>
+      <span><b>◆</b> locked outcome</span>
+      <span><b style="color:var(--accent-2)">red</b> = live Polymarket</span>
+      <span><b style="color:var(--gold)">gold</b> = manual override</span>
+      <div class="view-controls">
+        <button class="view-btn" id="viewLeft" title="Show left half only">◀ LEFT</button>
+        <button class="view-btn active" id="viewFull" title="Show full bracket">FULL</button>
+        <button class="view-btn" id="viewRight" title="Show right half only">RIGHT ▶</button>
+      </div>
+    </div>
+    <div class="bracket-viewport" id="bracketViewport">
+      <div id="bracketContainer"></div>
+    </div>
+  </section>
+
+  <!-- RIGHT: Detail (collapsed by default) -->
+  <aside class="col detail-col">
+    <button class="rail" id="detailRail" title="Toggle detail panel" aria-label="Toggle detail panel">◀</button>
+    <span class="collapsed-label" id="detailLabel">◀ Detail · click to expand</span>
+    <h2>Detail <small id="detailMatchId"></small></h2>
+    <div id="detailPanel">
+      <div class="empty-state">Click any match in the bracket to see which teams could play in it, with probabilities.<br><br>Especially useful for: <b>Match 94 — Seattle, July 6, Round of 16.</b></div>
+    </div>
+  </aside>
+</main>
+
+<!-- README MODAL -->
+<div class="modal-backdrop" id="readmeModal">
+  <div class="modal" role="dialog" aria-labelledby="readmeTitle">
+    <button class="modal-close" id="closeReadme" aria-label="Close">×</button>
+    <h1 id="readmeTitle">WC<span>26</span> Bracket Engine</h1>
+    <div class="modal-sub">A probability sandbox for the 2026 FIFA World Cup knockout stage</div>
+
+    <h2>What this is</h2>
+    <p>
+      An interactive simulator for the entire knockout stage of the 2026 FIFA World Cup — from the Round of 32 through the Final.
+      For any match in the bracket, it tells you which teams are most likely to play in it, with what probability, and how each
+      pairing would resolve. Originally built to answer a practical question: <i>which teams could realistically end up playing
+      the Round of 16 match in Seattle on July 6 (Match 94)?</i>
+    </p>
+
+    <h2>Where the numbers come from</h2>
+    <ul>
+      <li><b>Group stage odds:</b> Pulled live from Polymarket's <code>Group X Winner</code> prediction markets via their public Gamma API.
+          Each team's market-implied win probability becomes their <b>strength</b>. If the API can't be reached from your browser
+          (CORS or network), pre-loaded fallback priors based on FIFA rankings are used.</li>
+      <li><b>Finish probabilities:</b> Win-% gives 1st-place probability directly. Runner-up, 3rd-place, and elimination
+          probabilities are derived using a <a href="https://en.wikipedia.org/wiki/Plackett%E2%80%93Luce_model" target="_blank" rel="noopener">Plackett-Luce</a>
+          sampling model: draw the standings 1→4 by sampling without replacement weighted by team strength.</li>
+      <li><b>Knockout matches:</b> Each pairing's outcome uses the same odds-based formula —
+          <code>P(A wins) = sA^v / (sA^v + sB^v)</code>, where <code>v</code> is the Variance exponent. Lower variance produces more upsets;
+          higher variance favors chalk.</li>
+      <li><b>3rd-place routing:</b> All <b>495 combinations</b> from <b>Annex C</b> of FIFA's official tournament regulations are
+          baked into the simulator. So when a sim lands on a particular set of 8 qualifying 3rd-place teams, the lookup
+          deterministically routes them into the correct Round of 32 slots — not a random guess.</li>
+    </ul>
+
+    <h2>How the simulation runs</h2>
+    <p>
+      Each click of <span class="kbd">⟳ Re-Simulate</span> runs <b>N Monte Carlo simulations</b> of the full tournament
+      (default 10,000; configurable from 500 to 100,000). For every sim it: samples each group's final standings, identifies the
+      8 best 3rd-place teams, applies the Annex C lookup to assign R32 matchups, then plays out R32 → R16 → QF → SF → Final
+      one match at a time. Results are aggregated across all N sims to produce probabilities for each slot in the bracket.
+    </p>
+
+    <h2>What the controls do</h2>
+    <ul>
+      <li><b>Group sliders:</b> Drag any team's slider to override their strength (0–100). Useful for "what if Germany is in great form?"
+          scenarios. Manual overrides are marked with a gold <code>M</code> badge.</li>
+      <li><b>Lock a team's finish:</b> Click a team's name to cycle: 1st → RU → 3rd → out → none. Locks force that team to that
+          group placement in every simulation. Marked with a red <code>◆</code>.</li>
+      <li><b>Force a match winner:</b> Click any bracket match to open its detail panel, then use the "Force winner" buttons to
+          lock a team to win that match. The downstream bracket re-simulates with that constraint.</li>
+      <li><b>Variance:</b> 0.5 = maximum chaos (Cape Verde might really beat Spain). 1.0 = pure odds. 0.85 (default) is a
+          historically calibrated middle ground for knockout football.</li>
+      <li><b>Sims:</b> More sims = more precise probabilities, slower re-render. 10k is usually enough; 50k+ for fine-grained tail estimates.</li>
+      <li><b>Refetch odds:</b> Pulls the latest Polymarket prices without resetting your manual overrides or locks.</li>
+      <li><b>Reset all:</b> Wipes overrides and locks, refetches live odds, re-runs the sim from scratch.</li>
+    </ul>
+
+    <h2>Reading the bracket</h2>
+    <p>
+      The bracket is laid out March-Madness-style: Round of 32 on the far left and right, fanning inward through R16 → QF → SF
+      to the Final in the center. The 3rd-place playoff sits below the Final.
+    </p>
+    <p>
+      Each match card shows two numbers per team: <code>appearance% · win%</code>.
+      Example: a card showing <code>Belgium · 42% · 51%</code> means "across all sims, Belgium reaches this match 42% of the time,
+      and when it does, it wins 51% of those simulated meetings." For R32 matches, where slot fillers are deterministic from
+      group standings, only the appearance% is shown (no head-to-head needed).
+    </p>
+
+    <h2>Reading the detail panel</h2>
+    <p>
+      Click any match to open it. The right panel shows:
+    </p>
+    <ul>
+      <li><b>Teams most likely to play</b> in this match, ranked by probability.</li>
+      <li><b>Top 10 pairings</b> for this match, with the head-to-head win split for each.</li>
+      <li><b>Force-winner buttons</b> to lock any of the top 8 candidates to win this specific match.</li>
+    </ul>
+
+    <h2>Known caveats</h2>
+    <ul>
+      <li>The "which 3rd-place teams qualify" ranking uses team strength as a proxy. Real life uses points → goal difference → goals scored.
+          This biases qualification toward favorites, which slightly shrinks tail outcomes.</li>
+      <li>Polymarket markets close ~June 27 (group-stage end). After that point, market prices stop updating and the app falls back to
+          whatever the last-fetched values were.</li>
+      <li>Knockout draws and ties are not modeled separately — every match is decided as a single Bernoulli trial.
+          Extra time + penalties are absorbed into the win probability.</li>
+    </ul>
+
+    <h2>Data sources</h2>
+    <ul>
+      <li>Group draw: FIFA official draw, Dec 5 2025</li>
+      <li>Bracket structure & Annex C: <a href="https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage" target="_blank" rel="noopener">Wikipedia — 2026 FIFA World Cup knockout stage</a></li>
+      <li>Live odds: <a href="https://polymarket.com/fifa-world-cup" target="_blank" rel="noopener">Polymarket FIFA World Cup markets</a> (Gamma API)</li>
+    </ul>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
