@@ -628,8 +628,11 @@ function renderMatchCard(m, round, N, predicted){
   } else {
     // R16+: show the favorite-path occupants — the winners of the two feeder
     // matches — so whoever is shown advancing here actually appears next round.
-    // reach% = how often the team reaches this match across sims.
-    // win%   = how often it advances given it got here (conditional).
+    // reach% = how often the team reaches this match across all sims.
+    // win%   = how often the team wins THIS match across all sims (= reach% × the
+    //          conditional win-rate). Using overall rather than conditional makes
+    //          the two numbers comparable across teams and rounds, and the higher
+    //          win% always matches the advancer marker.
     const [tA, tB] = predicted?.occ?.[matchId] || [];
     if(!tA || !tB){
       slotsHtml = `
@@ -638,9 +641,9 @@ function renderMatchCard(m, round, N, predicted){
     } else {
       const winCnt = state.simResults?.matchWinCounts?.[matchId] || {};
       const reachPct = t => ((teamAppearance[t]||0)/N*100).toFixed(0);
-      const winPct   = t => (teamAppearance[t] ? (winCnt[t]||0)/teamAppearance[t]*100 : 0).toFixed(0);
+      const winPct   = t => ((winCnt[t]||0)/N*100).toFixed(0);
       slotsHtml = [tA, tB].map(t => `
-        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match ${reachPct(t)}% of sims; advances ${winPct(t)}% of the times it gets here">
+        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match in ${reachPct(t)}% of sims and wins it in ${winPct(t)}% of all sims">
           <span class="slot-team">${t}</span>
           <span class="slot-prob">${reachPct(t)}%·${winPct(t)}%</span>
         </div>`).join('');

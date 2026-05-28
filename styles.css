@@ -274,7 +274,7 @@
   button.btn.primary{background:var(--ink);color:var(--paper)}
   button.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
   .controls label{display:flex;gap:6px;align-items:center;cursor:pointer}
-  .controls input[type=number]{width:48px;padding:3px 5px;border:1px solid var(--ink);background:var(--paper);font-family:'DM Mono',monospace;font-size:11px}
+  .controls input[type=number]{width:78px;padding:3px 5px;border:1px solid var(--ink);background:var(--paper);font-family:'DM Mono',monospace;font-size:11px}
   .src-line{margin-left:auto;color:var(--muted)}
   .src-line a{color:var(--ink)}
 
@@ -303,7 +303,7 @@
     .status{font-size:9px}
     .controls{gap:6px;padding:8px 10px;flex-wrap:wrap;font-size:9px}
     .controls .src-line{display:none}
-    .controls input[type=number]{width:48px}
+    .controls input[type=number]{width:68px}
     .controls input[type=range]{width:60px}
 
     /* Stack panels under bracket; rails become full-width toggle bars */
