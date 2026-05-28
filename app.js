@@ -479,10 +479,9 @@ function renderBracket(){
   wrap.appendChild(grid);
   c.appendChild(wrap);
 
-  // Draw connecting lines via SVG overlay
+  // Draw connecting lines via SVG overlay, then fit to viewport (drawBracketConnectors
+  // measures in natural units and calls fitBracket() once the SVG is in place).
   drawBracketConnectors(wrap, grid);
-  // Fit to viewport
-  fitBracket();
 }
 
 function fitBracket(){
@@ -503,11 +502,12 @@ function fitBracket(){
 }
 
 function drawBracketConnectors(wrap, grid){
-  // Reset transform before measuring so coordinates are in natural (unscaled) units.
-  // fitBracket() will reapply scaling afterwards.
-  wrap.style.transform = '';
-  // Get all match elements with their positions
+  // Defer to the next frame so the latest layout (e.g. after a panel opens/closes)
+  // has settled, then measure in natural (unscaled) units and draw. fitBracket() at
+  // the end reapplies the scale to the whole wrap — SVG included — so the connectors
+  // and the cards scale together and stay aligned at any zoom level.
   requestAnimationFrame(() => {
+    wrap.style.transform = '';
     const oldSvg = wrap.querySelector('svg.connectors');
     if(oldSvg) oldSvg.remove();
     const rect = grid.getBoundingClientRect();
@@ -574,6 +574,8 @@ function drawBracketConnectors(wrap, grid){
     connect("102","99","100",'R');
 
     wrap.appendChild(svg);
+    // Reapply scaling now that the SVG is in place, scaling cards + connectors together.
+    fitBracket();
   });
 }
 
@@ -789,10 +791,7 @@ function redrawConnectorsSoon(){
   setTimeout(()=>{
     const wrap = document.querySelector('.bracket-wrap');
     const grid = document.querySelector('.bracket-grid');
-    if(wrap && grid){
-      drawBracketConnectors(wrap, grid);
-      fitBracket();
-    }
+    if(wrap && grid) drawBracketConnectors(wrap, grid);
   }, 300);
 }
 function setGroupsOpen(open){
@@ -870,10 +869,7 @@ window.addEventListener('resize', () => {
     // Otherwise just redraw + refit
     const wrap = document.querySelector('.bracket-wrap');
     const grid = document.querySelector('.bracket-grid');
-    if(wrap && grid){
-      drawBracketConnectors(wrap, grid);
-      fitBracket();
-    }
+    if(wrap && grid) drawBracketConnectors(wrap, grid);
   }, 200);
 });
 
