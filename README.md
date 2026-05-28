@@ -39,12 +39,14 @@ app.js        logic: Polymarket fetch, Monte Carlo simulation, rendering, contro
 
 No build step, no backend, no API keys — the Polymarket call runs client-side against a CORS-open public API.
 
-**Vercel**
+### Vercel
+
 1. Push this repo to GitHub.
 2. Import it in Vercel → framework preset **Other**, no build command, output directory = root.
 3. Deploy. `index.html` is served at the root URL.
 
-**GitHub Pages**
+### GitHub Pages
+
 1. Push to GitHub.
 2. Settings → Pages → deploy from the `main` branch, root folder.
 
@@ -59,5 +61,9 @@ No build step, no backend, no API keys — the Polymarket call runs client-side 
 - Group draw: FIFA official draw, Dec 5 2025
 - Bracket structure & Annex C: [Wikipedia — 2026 FIFA World Cup knockout stage](https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_knockout_stage)
 - Live odds: [Polymarket FIFA World Cup markets](https://polymarket.com/fifa-world-cup) (Gamma API)
+
+## License
+
+[MIT](LICENSE) © 2026 aviarora10. Covers this project's code; live odds remain Polymarket's and are consumed via their API, not redistributed.
 </content>
 </invoke>
