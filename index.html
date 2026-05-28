@@ -99,7 +99,7 @@
 
 <div class="controls">
   <button class="btn primary" id="resimBtn">⟳ Re-Simulate</button>
-  <label>Sims <input type="number" id="simCount" value="50000" min="500" max="100000" step="1000"></label>
+  <label>Sims <input type="number" id="simCount" value="10000" min="500" max="100000" step="1000"></label>
   <label>Variance <input type="range" id="varianceSlider" min="0.5" max="1" step="0.05" value="0.85" style="width:80px"><span id="varianceVal" style="font-family:'DM Mono',monospace;font-size:10px;min-width:30px">0.85</span></label>
   <button class="btn" id="resetLocks">Clear locks</button>
   <button class="btn" id="resetAll">Reset all</button>
@@ -189,7 +189,7 @@
     <h2>How the simulation runs</h2>
     <p>
       Each click of <span class="kbd">⟳ Re-Simulate</span> runs <b>N Monte Carlo simulations</b> of the full tournament
-      (default 50,000; configurable from 500 to 100,000). For every sim it: samples each group's final standings, identifies the
+      (default 10,000; configurable from 500 to 100,000). For every sim it: samples each group's final standings, identifies the
       8 best 3rd-place teams, applies the Annex C lookup to assign R32 matchups, then plays out R32 → R16 → QF → SF → Final
       one match at a time. Results are aggregated across all N sims to produce probabilities for each slot in the bracket.
     </p>
@@ -204,8 +204,8 @@
           lock a team to win that match. The downstream bracket re-simulates with that constraint.</li>
       <li><b>Variance:</b> 0.5 = maximum chaos (Cape Verde might really beat Spain). 1.0 = pure odds. 0.85 (default) is a
           historically calibrated middle ground for knockout football.</li>
-      <li><b>Sims:</b> More sims = more precise probabilities, slower re-render. 50k (default) is good for general use; 100k for
-          fine-grained tail estimates.</li>
+      <li><b>Sims:</b> More sims = more precise probabilities, slower re-render. 10k (default) is snappy and accurate enough for
+          most questions; bump to 50k or 100k for tighter tail estimates if you can wait a couple of seconds.</li>
       <li><b>Refetch odds:</b> Pulls the latest Polymarket prices without clearing your locks.</li>
       <li><b>Reset all:</b> Wipes overrides and locks, refetches live odds, re-runs the sim from scratch.</li>
     </ul>

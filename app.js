@@ -608,46 +608,31 @@ function renderMatchCard(m, round, N, predicted){
   const advWinner = predicted?.winner?.['M'+matchId];
   let slotsHtml;
 
-  if(round === 'R32'){
-    // R32 occupants are the most-likely team for each slot (deterministic from
-    // group standings + Annex C). Same source the predicted path uses.
-    slotsHtml = slots.map(s => {
-      const { label, team, pct } = r32SlotLikely(s, matchId, N);
-      return `
-      <div class="slot ${team && team===advWinner?'adv':''}">
-        <span class="slot-team ${team?'':'tbd'}">${team || label}</span>
-        <span class="slot-prob">${pct}</span>
-      </div>`;
-    }).join('');
+  // Every card — R32 through Final — uses the same format: predicted occupants
+  // with reach% (how often each team appears here) and head-to-head win% (when
+  // they actually meet, who wins; the two win%s sum to 100). R32 occupants come
+  // from group standings + Annex C; later rounds propagate from feeder winners.
+  // Fallback to a slot label (e.g. "W E" or "3 of A/B/C/D/F") if no occupant
+  // has been determined yet — only relevant before the very first sim.
+  const [tA, tB] = predicted?.occ?.[matchId] || [];
+  if(!tA || !tB){
+    const labelFor = (s) => s ? (s.type==='3of' ? `3 of ${s.groups.join('/')}` : `${s.type} ${s.group}`) : 'TBD';
+    slotsHtml = `
+      <div class="slot"><span class="slot-team tbd">${labelFor(slots[0])}</span><span class="slot-prob"></span></div>
+      <div class="slot"><span class="slot-team tbd">${labelFor(slots[1])}</span><span class="slot-prob"></span></div>`;
   } else {
-    // R16+: show the favorite-path occupants — the winners of the two feeder
-    // matches — so whoever is shown advancing here actually appears next round.
-    // reach% = how often the team reaches this match across all sims.
-    // win%   = HEAD-TO-HEAD conditional probability of winning this specific
-    //          match-up against the other team shown on the card. The two win%s
-    //          sum to 100% by construction (they're the only two outcomes when
-    //          those two teams meet). If by some chance the two predicted
-    //          occupants never actually met in any sim, fall back to the overall
-    //          win count so the card always has a number.
-    const [tA, tB] = predicted?.occ?.[matchId] || [];
-    if(!tA || !tB){
-      slotsHtml = `
-        <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>
-        <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>`;
-    } else {
-      const winCnt = state.simResults?.matchWinCounts?.[matchId] || {};
-      const h2h = state.simResults?.matchHeadToHead?.[matchId]?.[[tA,tB].sort().join('||')];
-      const reachPct = t => ((teamAppearance[t]||0)/N*100).toFixed(0);
-      const winPct = t => (h2h && h2h.total > 0)
-        ? ((h2h[t]||0)/h2h.total*100).toFixed(0)
-        : ((winCnt[t]||0)/N*100).toFixed(0);
-      const otherOf = t => t===tA ? tB : tA;
-      slotsHtml = [tA, tB].map(t => `
-        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match in ${reachPct(t)}% of sims; in a head-to-head against ${otherOf(t)}, ${t} wins ${winPct(t)}% of the time">
-          <span class="slot-team">${t}</span>
-          <span class="slot-prob">${reachPct(t)}%·${winPct(t)}%</span>
-        </div>`).join('');
-    }
+    const winCnt = state.simResults?.matchWinCounts?.[matchId] || {};
+    const h2h = state.simResults?.matchHeadToHead?.[matchId]?.[[tA,tB].sort().join('||')];
+    const reachPct = t => ((teamAppearance[t]||0)/N*100).toFixed(0);
+    const winPct = t => (h2h && h2h.total > 0)
+      ? ((h2h[t]||0)/h2h.total*100).toFixed(0)
+      : ((winCnt[t]||0)/N*100).toFixed(0);
+    const otherOf = t => t===tA ? tB : tA;
+    slotsHtml = [tA, tB].map(t => `
+      <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match in ${reachPct(t)}% of sims; in a head-to-head against ${otherOf(t)}, ${t} wins ${winPct(t)}% of the time">
+        <span class="slot-team">${t}</span>
+        <span class="slot-prob">${reachPct(t)}%·${winPct(t)}%</span>
+      </div>`).join('');
   }
 
   el.innerHTML = `
