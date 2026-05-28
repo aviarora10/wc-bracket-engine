@@ -699,21 +699,23 @@ function renderDetail(){
     <div class="detail-sub">${date} 2026 · ${round}</div>
 
     <div class="detail-section">
-      <h3>Teams most likely to play in this match</h3>
+      <h3>Teams in this match <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— reach% · win% (same numbers as the card)</span></h3>
       <div class="ranklist">
         ${apprSorted.slice(0,12).map(([t,c],i) => {
-          const pct = c/N*100;
-          return `<div class="rank-row">
+          const reachPct = c/N*100;
+          const winPct = (winCounts[t]||0)/N*100;
+          return `<div class="rank-row" title="${t}: reaches this match in ${reachPct.toFixed(1)}% of sims and wins it in ${winPct.toFixed(1)}% of all sims">
             <span class="rank-num">${i+1}</span>
             <span class="rank-team">${t}</span>
-            <div class="rank-bar-wrap"><div class="rank-bar" style="width:${pct}%"></div><span class="rank-pct">${pct.toFixed(1)}%</span></div>
+            <div class="rank-bar-wrap"><div class="rank-bar" style="width:${reachPct}%"></div><span class="rank-pct">${reachPct.toFixed(1)}%</span></div>
+            <span class="rank-win">${winPct.toFixed(1)}%</span>
           </div>`;
         }).join('') || '<div class="empty-state">Run a sim first.</div>'}
       </div>
     </div>
 
     <div class="detail-section">
-      <h3>Most likely pairings · with head-to-head win %</h3>
+      <h3>Pairings <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— how often each match-up actually happens, and who wins if it does</span></h3>
       <div class="pairlist">
         ${pairsSorted.map(([key,c])=>{
           const [a,b] = key.split('||');
@@ -723,7 +725,7 @@ function renderDetail(){
           if(h2h && h2h.total > 0){
             const winA = (h2h[a]/h2h.total*100).toFixed(0);
             const winB = (h2h[b]/h2h.total*100).toFixed(0);
-            winLine = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);display:block">${a} wins ${winA}% · ${b} wins ${winB}%</span>`;
+            winLine = `<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);display:block">if it happens: ${a} ${winA}% · ${b} ${winB}%</span>`;
           }
           return `<div class="pair"><div><span class="pair-teams">${a} vs ${b}</span>${winLine}</div><span class="pair-pct">${pct}%</span></div>`;
         }).join('') || '<div class="empty-state">No data.</div>'}

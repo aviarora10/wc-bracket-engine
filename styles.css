@@ -257,11 +257,13 @@
   .detail-title{font-family:'Bowlby One',sans-serif;font-size:18px;line-height:1;text-transform:uppercase;margin:0 0 4px}
   .detail-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
   .ranklist{display:flex;flex-direction:column;gap:2px}
-  .rank-row{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:4px 6px;background:var(--paper-2);border:1px solid transparent}
+  .rank-row{display:grid;grid-template-columns:22px 1fr 80px auto;gap:8px;align-items:center;padding:4px 6px;background:var(--paper-2);border:1px solid transparent}
   .rank-row:hover{border-color:var(--line)}
+  /* Overall win% (matches the bracket card's second number). */
+  .rank-win{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;color:var(--ink);min-width:42px;text-align:right}
   .rank-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
   .rank-team{font-weight:600;font-size:13px}
-  .rank-bar-wrap{position:relative;height:18px;background:rgba(0,0,0,.04);width:100px}
+  .rank-bar-wrap{position:relative;height:18px;background:rgba(0,0,0,.04);width:80px}
   .rank-bar{position:absolute;left:0;top:0;bottom:0;background:var(--ink)}
   .rank-pct{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;position:absolute;right:4px;top:50%;transform:translateY(-50%);mix-blend-mode:difference;color:#fff}
   .detail-section{margin-top:18px}
