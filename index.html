@@ -131,7 +131,7 @@
   <section class="col center">
     <div class="legend">
       <span>Click match → see who can play it</span>
-      <span>Each card: <b>reach%</b> (team appears here) · <b>win%</b> (team wins this match, overall)</span>
+      <span>Each card: <b>reach%</b> (team appears here) · <b>win%</b> (head-to-head vs the other team on this card — the two win%s sum to 100)</span>
       <span>The favored team in each match (marked with <b style="color:var(--accent-2)">▸</b>) flows into the next round</span>
       <div class="view-controls">
         <button class="view-btn" id="viewLeft" title="Show left half only">◀ LEFT</button>
@@ -219,11 +219,12 @@
       The bracket shows a single <b>most-likely path</b>: the favored team in each match (marked with a red
       <b style="color:var(--accent-2)">▸</b>) flows into the next round, so it reads like one filled-in bracket rather than a
       jumble of independent match-ups. Each card shows two numbers per team: <code>reach% · win%</code>.
-      <b>reach%</b> is how often the team appears in this match across all sims; <b>win%</b> is how often it wins this match across
-      all sims (so the two numbers across both teams plus "anyone else" sum to 100%, and the higher win% is always the marked advancer).
-      Example: <code>Belgium · 42% · 22%</code> means Belgium reaches this match in 42% of sims and wins it in 22% of all sims —
-      which works out to a conditional advance rate of 22/42 ≈ 52% when Belgium does get here. For R32 matches the slot is
-      deterministic from group standings, so only the reach% (i.e. finish probability) is shown.
+      <b>reach%</b> is how often the team appears in this match across all sims. <b>win%</b> is the head-to-head conditional —
+      when those two specific teams actually meet here, what fraction of the time each one wins. The two win%s sum to 100%
+      (they're the only two outcomes when those teams meet), and the higher win% is always the marked advancer.
+      Example: a card showing <code>Belgium · 42% · 53%</code> and <code>Norway · 38% · 47%</code> means Belgium reaches this
+      match in 42% of sims, Norway in 38%, and on the occasions they actually meet here Belgium wins 53% of the time and Norway
+      47%. For R32 matches the slot is deterministic from group standings, so only the reach% (finish probability) is shown.
     </p>
     <p>
       Because it's one representative path, the cards under-state the chaos — a 25% favorite still loses most of the time. The

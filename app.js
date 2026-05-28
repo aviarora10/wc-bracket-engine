@@ -366,6 +366,13 @@ function computePredictedBracket(){
   const { N, matchWinCounts } = sim;
   const advance = (id, a, b) => {
     if(!a) return b; if(!b) return a;
+    // Prefer head-to-head within this specific pairing — that's the same number
+    // the card shows, so the advancer marker always matches the higher win%.
+    const rec = sim.matchHeadToHead?.[id]?.[[a,b].sort().join('||')];
+    if(rec && rec.total > 0){
+      return (rec[b]||0) > (rec[a]||0) ? b : a;
+    }
+    // Fallback: overall win counts (rare — only if the two teams never met here).
     const w = matchWinCounts[id] || {};
     const wa = w[a]||0, wb = w[b]||0;
     if(wa === wb) return (state.teams[b]?.strength||0) > (state.teams[a]?.strength||0) ? b : a;
@@ -616,10 +623,12 @@ function renderMatchCard(m, round, N, predicted){
     // R16+: show the favorite-path occupants — the winners of the two feeder
     // matches — so whoever is shown advancing here actually appears next round.
     // reach% = how often the team reaches this match across all sims.
-    // win%   = how often the team wins THIS match across all sims (= reach% × the
-    //          conditional win-rate). Using overall rather than conditional makes
-    //          the two numbers comparable across teams and rounds, and the higher
-    //          win% always matches the advancer marker.
+    // win%   = HEAD-TO-HEAD conditional probability of winning this specific
+    //          match-up against the other team shown on the card. The two win%s
+    //          sum to 100% by construction (they're the only two outcomes when
+    //          those two teams meet). If by some chance the two predicted
+    //          occupants never actually met in any sim, fall back to the overall
+    //          win count so the card always has a number.
     const [tA, tB] = predicted?.occ?.[matchId] || [];
     if(!tA || !tB){
       slotsHtml = `
@@ -627,10 +636,14 @@ function renderMatchCard(m, round, N, predicted){
         <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>`;
     } else {
       const winCnt = state.simResults?.matchWinCounts?.[matchId] || {};
+      const h2h = state.simResults?.matchHeadToHead?.[matchId]?.[[tA,tB].sort().join('||')];
       const reachPct = t => ((teamAppearance[t]||0)/N*100).toFixed(0);
-      const winPct   = t => ((winCnt[t]||0)/N*100).toFixed(0);
+      const winPct = t => (h2h && h2h.total > 0)
+        ? ((h2h[t]||0)/h2h.total*100).toFixed(0)
+        : ((winCnt[t]||0)/N*100).toFixed(0);
+      const otherOf = t => t===tA ? tB : tA;
       slotsHtml = [tA, tB].map(t => `
-        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match in ${reachPct(t)}% of sims and wins it in ${winPct(t)}% of all sims">
+        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match in ${reachPct(t)}% of sims; in a head-to-head against ${otherOf(t)}, ${t} wins ${winPct(t)}% of the time">
           <span class="slot-team">${t}</span>
           <span class="slot-prob">${reachPct(t)}%·${winPct(t)}%</span>
         </div>`).join('');
@@ -699,23 +712,21 @@ function renderDetail(){
     <div class="detail-sub">${date} 2026 · ${round}</div>
 
     <div class="detail-section">
-      <h3>Teams in this match <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— reach% · win% (same numbers as the card)</span></h3>
+      <h3>Teams most likely to play in this match <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— ranked by reach%</span></h3>
       <div class="ranklist">
         ${apprSorted.slice(0,12).map(([t,c],i) => {
           const reachPct = c/N*100;
-          const winPct = (winCounts[t]||0)/N*100;
-          return `<div class="rank-row" title="${t}: reaches this match in ${reachPct.toFixed(1)}% of sims and wins it in ${winPct.toFixed(1)}% of all sims">
+          return `<div class="rank-row" title="${t} reaches this match in ${reachPct.toFixed(1)}% of sims">
             <span class="rank-num">${i+1}</span>
             <span class="rank-team">${t}</span>
             <div class="rank-bar-wrap"><div class="rank-bar" style="width:${reachPct}%"></div><span class="rank-pct">${reachPct.toFixed(1)}%</span></div>
-            <span class="rank-win">${winPct.toFixed(1)}%</span>
           </div>`;
         }).join('') || '<div class="empty-state">Run a sim first.</div>'}
       </div>
     </div>
 
     <div class="detail-section">
-      <h3>Pairings <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— how often each match-up actually happens, and who wins if it does</span></h3>
+      <h3>Pairings <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">— how often each match-up happens, and who wins if it does (same head-to-head as the card)</span></h3>
       <div class="pairlist">
         ${pairsSorted.map(([key,c])=>{
           const [a,b] = key.split('||');
