@@ -140,10 +140,17 @@
       to the Final in the center. The 3rd-place playoff sits below the Final.
     </p>
     <p>
-      Each match card shows two numbers per team: <code>appearance% · win%</code>.
-      Example: a card showing <code>Belgium · 42% · 51%</code> means "across all sims, Belgium reaches this match 42% of the time,
-      and when it does, it wins 51% of those simulated meetings." For R32 matches, where slot fillers are deterministic from
-      group standings, only the appearance% is shown (no head-to-head needed).
+      The bracket shows a single <b>most-likely path</b>: the favored team in each match (marked with a red
+      <b style="color:var(--accent-2)">▸</b>) flows into the next round, so it reads like one filled-in bracket rather than a
+      jumble of independent match-ups. Each card shows two numbers per team: <code>reach% · win%</code>.
+      Example: <code>Belgium · 42% · 51%</code> means "across all sims, Belgium reaches this match 42% of the time, and when it
+      does it advances 51% of the time." For R32 matches the slot is deterministic from group standings, so only the
+      reach% (or finish probability) is shown.
+    </p>
+    <p>
+      Because it's one representative path, the cards under-state the chaos — a 25% favorite still loses most of the time. The
+      <b>detail panel</b> (click any match) keeps the full picture: every team's odds of reaching that match and the top
+      head-to-head pairings.
     </p>
 
     <h2>Reading the detail panel</h2>

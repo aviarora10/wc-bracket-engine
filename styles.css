@@ -214,6 +214,10 @@
   .slot-team{font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
   .slot-team.tbd{color:var(--muted);font-style:italic;font-weight:400;font-size:10px}
   .slot-prob{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);font-weight:500}
+  /* The team that advances on the favorite path — small red marker after its name. */
+  .slot.adv .slot-team::after{content:" \25B8";color:var(--accent-2);font-weight:700}
+  .match.selected .slot.adv .slot-team::after,
+  .final-col .match .slot.adv .slot-team::after{color:var(--accent)}
 
   /* Connection lines between rounds */
   .match.has-feeder-r::after,

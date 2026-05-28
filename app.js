@@ -342,10 +342,72 @@ function renderGroups(){
    ========================================================================= */
 let selectedMatchId = null;
 
+/* Most-likely occupant of an R32 slot (+ its display label and probability).
+   Shared by the bracket render and the predicted-path propagation so the two
+   can never disagree about who fills a slot. */
+function r32SlotLikely(spec, matchId, N){
+  const sim = state.simResults;
+  let label='', team='', pct='';
+  if(spec.type==='W'||spec.type==='RU'||spec.type==='3'){
+    label = `${spec.type} ${spec.group}`;
+    const place = spec.type==='W'?1:spec.type==='RU'?2:3;
+    const finish = sim?.groupFinish?.[spec.group]||{};
+    const best = Object.entries(finish).map(([t,p])=>[t,p[place]||0]).sort((a,b)=>b[1]-a[1])[0];
+    if(best && best[1]>0){ team=best[0]; pct=(best[1]/N*100).toFixed(0)+'%'; }
+  } else if(spec.type==='3of'){
+    label = `3 of ${spec.groups.join('/')}`;
+    const wG = spec.opposingWinnerGroup;
+    const tally = {};
+    Object.entries(sim?.matchPairCounts?.[matchId]||{}).forEach(([k,c])=>{
+      k.split('||').forEach(t => { if(state.teams[t] && state.teams[t].group !== wG) tally[t]=(tally[t]||0)+c; });
+    });
+    const best = Object.entries(tally).sort((a,b)=>b[1]-a[1])[0];
+    if(best && best[1]>0){ team=best[0]; pct=(best[1]/N*100).toFixed(0)+'%'; }
+  }
+  return {label, team, pct};
+}
+
+/* Build ONE internally-consistent "favorite path" bracket: take the most-likely
+   R32 occupants, then advance the winner of each match (the team that won it most
+   often across the sims) into the next round. This guarantees the team shown
+   advancing from a match actually appears in the downstream match — the full
+   probabilistic spread still lives in the detail panel. */
+function computePredictedBracket(){
+  const sim = state.simResults;
+  const occ = {}, winner = {};   // occ[id]=[topTeam,bottomTeam]; winner['M'+id]=advancing team
+  if(!sim) return {occ, winner};
+  const { N, matchWinCounts } = sim;
+  const advance = (id, a, b) => {
+    if(!a) return b; if(!b) return a;
+    const w = matchWinCounts[id] || {};
+    const wa = w[a]||0, wb = w[b]||0;
+    if(wa === wb) return (state.teams[b]?.strength||0) > (state.teams[a]?.strength||0) ? b : a;
+    return wb > wa ? b : a;
+  };
+  R32.forEach(([id,,,sA,sB]) => {
+    const a = r32SlotLikely(sA, id, N).team, b = r32SlotLikely(sB, id, N).team;
+    occ[id] = [a, b]; winner['M'+id] = advance(id, a, b);
+  });
+  const refTeam = ref => {
+    if(ref.endsWith('-loser')){              // 3rd-place game pulls the SF losers
+      const mid = ref.slice(0,-6), id = mid.slice(1);
+      const [a,b] = occ[id] || [];
+      return winner[mid] === a ? b : a;
+    }
+    return winner[ref];
+  };
+  [R16, QF, SF, FINAL].forEach(round => round.forEach(([id,,,rA,rB]) => {
+    const a = refTeam(rA), b = refTeam(rB);
+    occ[id] = [a, b]; winner['M'+id] = advance(id, a, b);
+  }));
+  return {occ, winner};
+}
+
 function renderBracket(){
   const c = document.getElementById('bracketContainer');
   c.innerHTML = '';
   const N = state.simResults?.N || 1;
+  const predicted = computePredictedBracket();
 
   // Determine which matches are on which side of the bracket by walking the tree from the final.
   // Left half: feeds M101. Right half: feeds M102.
@@ -384,7 +446,7 @@ function renderBracket(){
     col.innerHTML = `<div class="round-label">${label}</div>`;
     ids.forEach(id => {
       const [round, m] = byId[id];
-      col.appendChild(renderMatchCard(m, round, N));
+      col.appendChild(renderMatchCard(m, round, N, predicted));
     });
     return col;
   };
@@ -398,9 +460,9 @@ function renderBracket(){
   const finalCol = document.createElement('div');
   finalCol.className = 'round-col final-col';
   finalCol.innerHTML = `<div class="round-label">Final · Jul 19</div><div class="trophy">★ Trophy ★</div>`;
-  finalCol.appendChild(renderMatchCard(byId[finalID][1], 'F', N));
+  finalCol.appendChild(renderMatchCard(byId[finalID][1], 'F', N, predicted));
   // Add 3rd-place game beneath final
-  const thirdPlace = renderMatchCard(byId["103"][1], 'F', N);
+  const thirdPlace = renderMatchCard(byId["103"][1], 'F', N, predicted);
   thirdPlace.style.opacity = '0.65';
   thirdPlace.style.marginTop = '12px';
   finalCol.appendChild(Object.assign(document.createElement('div'),{
@@ -515,7 +577,7 @@ function drawBracketConnectors(wrap, grid){
   });
 }
 
-function renderMatchCard(m, round, N){
+function renderMatchCard(m, round, N, predicted){
   const [id, venue, date, ...slots] = m;
   const matchId = id;
   const el = document.createElement('div');
@@ -534,105 +596,40 @@ function renderMatchCard(m, round, N){
     teamAppearance[a] = (teamAppearance[a]||0)+c;
     teamAppearance[b] = (teamAppearance[b]||0)+c;
   });
-  const sortedAppearance = Object.entries(teamAppearance).sort((a,b)=>b[1]-a[1]);
-
-  // Best estimate of which team plays the "top" and "bottom" slot:
-  // For R32, slots are deterministic from data.
-  // For later rounds, we know the bracket halves, but it's complicated to track
-  // which feeder a team came from. We just show the top two most-appearing teams
-  // and compute their *head-to-head* win-rate from when they actually met in the sim.
-  let topA, topB, slotsHtml;
+  // Team that advances from THIS match on the favorite path (used to mark the winner slot).
+  const advWinner = predicted?.winner?.['M'+matchId];
+  let slotsHtml;
 
   if(round === 'R32'){
-    // Use the slot specs to render TBD labels with most-likely team
-    const slotInfo = slots.map(s => {
-      let label, likelyTeam='', likelyPct='';
-      if(s.type==='W'||s.type==='RU'||s.type==='3'){
-        const g = s.group;
-        label = `${s.type==='W'?'W':s.type==='RU'?'RU':'3'} ${g}`;
-        const place = s.type==='W'?1:s.type==='RU'?2:3;
-        const finish = state.simResults?.groupFinish?.[g]||{};
-        const best = Object.entries(finish).map(([t,p])=>[t,p[place]||0]).sort((a,b)=>b[1]-a[1])[0];
-        if(best && best[1]>0){ likelyTeam=best[0]; likelyPct=(best[1]/N*100).toFixed(0)+'%'; }
-      } else if(s.type==='3of'){
-        label = `3 of ${s.groups.join('/')}`;
-        // Find which team most often fills this exact slot.
-        // Easiest: which team appears most as the non-winner side of this match.
-        const winnerGroup = s.opposingWinnerGroup;
-        // The other slot is the W of opposingWinnerGroup. Find pairs where that's involved.
-        const tally = {};
-        Object.entries(pairCounts).forEach(([k,c])=>{
-          const [a,b] = k.split('||');
-          // The 3rd-place team is the one NOT from the winner-group's roster
-          [a,b].forEach(t => {
-            if(state.teams[t] && state.teams[t].group !== winnerGroup){
-              tally[t] = (tally[t]||0) + c;
-            } else if(state.teams[t] && state.teams[t].group === winnerGroup){
-              // skip: this is the W slot team
-            } else {
-              tally[t] = (tally[t]||0) + c;
-            }
-          });
-        });
-        // Better: for 3of, the opposing team is from a group NOT equal to winnerGroup.
-        // Sort and pick top.
-        const best = Object.entries(tally).filter(([t])=>state.teams[t]?.group !== winnerGroup).sort((a,b)=>b[1]-a[1])[0];
-        if(best && best[1]>0){
-          likelyTeam = best[0];
-          likelyPct = (best[1]/N*100).toFixed(0)+'%';
-        }
-      }
-      return {label, likelyTeam, likelyPct};
-    });
-
-    slotsHtml = slotInfo.map(si => `
-      <div class="slot">
-        <span class="slot-team ${si.likelyTeam?'':'tbd'}">${si.likelyTeam || si.label}</span>
-        <span class="slot-prob">${si.likelyPct}</span>
-      </div>
-    `).join('');
+    // R32 occupants are the most-likely team for each slot (deterministic from
+    // group standings + Annex C). Same source the predicted path uses.
+    slotsHtml = slots.map(s => {
+      const { label, team, pct } = r32SlotLikely(s, matchId, N);
+      return `
+      <div class="slot ${team && team===advWinner?'adv':''}">
+        <span class="slot-team ${team?'':'tbd'}">${team || label}</span>
+        <span class="slot-prob">${pct}</span>
+      </div>`;
+    }).join('');
   } else {
-    // R16+: Display the SINGLE most-likely PAIRING (not the top-2 individual teams,
-    // which can produce impossible match-ups like "France vs Germany" in both M89 and M97).
-    // The pair frequency tells us which two teams most often actually meet here.
-    const sortedPairs = Object.entries(pairCounts).sort((a,b)=>b[1]-a[1]);
-    const topPair = sortedPairs[0];
-
-    if(!topPair){
+    // R16+: show the favorite-path occupants — the winners of the two feeder
+    // matches — so whoever is shown advancing here actually appears next round.
+    // reach% = how often the team reaches this match across sims.
+    // win%   = how often it advances given it got here (conditional).
+    const [tA, tB] = predicted?.occ?.[matchId] || [];
+    if(!tA || !tB){
       slotsHtml = `
         <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>
-        <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>
-      `;
+        <div class="slot"><span class="slot-team tbd">TBD</span><span class="slot-prob"></span></div>`;
     } else {
-      const [pairKey, pairCount] = topPair;
-      const [tA, tB] = pairKey.split('||');
-      const pairPct = (pairCount/N*100).toFixed(0);
-
-      // Individual appearance % (across ALL pairings, not just this one)
-      const apprA = teamAppearance[tA] || 0;
-      const apprB = teamAppearance[tB] || 0;
-      const apprAPct = (apprA/N*100).toFixed(0);
-      const apprBPct = (apprB/N*100).toFixed(0);
-
-      // Head-to-head win % within THIS exact pairing
-      const rec = h2h[pairKey];
-      let winA='', winB='';
-      if(rec && rec.total > 0){
-        winA = (rec[tA]/rec.total*100).toFixed(0)+'%';
-        winB = (rec[tB]/rec.total*100).toFixed(0)+'%';
-      }
-
-      slotsHtml = `
-        <div class="slot" title="${tA} reaches this match ${apprAPct}% overall; wins ${winA} when facing ${tB}">
-          <span class="slot-team">${tA}</span>
-          <span class="slot-prob">${apprAPct}%·${winA}</span>
-        </div>
-        <div class="slot" title="${tB} reaches this match ${apprBPct}% overall; wins ${winB} when facing ${tA}">
-          <span class="slot-team">${tB}</span>
-          <span class="slot-prob">${apprBPct}%·${winB}</span>
-        </div>
-        <div style="font-family:'DM Mono',monospace;font-size:8px;color:var(--muted);text-align:right;margin-top:2px;letter-spacing:.05em">PAIR ${pairPct}%</div>
-      `;
+      const winCnt = state.simResults?.matchWinCounts?.[matchId] || {};
+      const reachPct = t => ((teamAppearance[t]||0)/N*100).toFixed(0);
+      const winPct   = t => (teamAppearance[t] ? (winCnt[t]||0)/teamAppearance[t]*100 : 0).toFixed(0);
+      slotsHtml = [tA, tB].map(t => `
+        <div class="slot ${t===advWinner?'adv':''}" title="${t} reaches this match ${reachPct(t)}% of sims; advances ${winPct(t)}% of the times it gets here">
+          <span class="slot-team">${t}</span>
+          <span class="slot-prob">${reachPct(t)}%·${winPct(t)}%</span>
+        </div>`).join('');
     }
   }
 
