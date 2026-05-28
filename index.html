@@ -3,11 +3,86 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>WC26 · Bracket Probability Engine</title>
+<title>WC26 · Bracket Probability Engine — live 2026 FIFA World Cup knockout simulator</title>
+<meta name="description" content="Interactive Monte Carlo simulator for the 2026 FIFA World Cup knockout stage. Live Polymarket odds drive the probabilities; all 495 combinations of FIFA's Annex C 3rd-place routing are encoded. See which teams are most likely to play any given knockout match.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://aviarora10.github.io/wc-bracket-engine/">
+
+<!-- Open Graph / social previews -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="WC26 · Bracket Probability Engine">
+<meta property="og:description" content="Monte Carlo simulator for the 2026 FIFA World Cup knockout stage, driven by live Polymarket odds. Full FIFA Annex C 3rd-place routing baked in.">
+<meta property="og:url" content="https://aviarora10.github.io/wc-bracket-engine/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="WC26 · Bracket Probability Engine">
+<meta name="twitter:description" content="Live probabilistic simulator for the 2026 FIFA World Cup knockout bracket.">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
+
+<!-- Structured data: tell search engines and AI agents what this page is and what it answers. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "WC26 Bracket Probability Engine",
+  "url": "https://aviarora10.github.io/wc-bracket-engine/",
+  "description": "Interactive Monte Carlo simulator for the 2026 FIFA World Cup knockout stage, driven by live Polymarket prediction-market odds. Encodes all 495 combinations of FIFA's Annex C 3rd-place routing.",
+  "applicationCategory": "SportsApplication",
+  "operatingSystem": "Any (modern web browser)",
+  "isAccessibleForFree": true,
+  "author": { "@type": "Person", "name": "aviarora10" },
+  "about": {
+    "@type": "SportsEvent",
+    "name": "2026 FIFA World Cup",
+    "sport": "Association football",
+    "startDate": "2026-06-11",
+    "endDate": "2026-07-19"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does FIFA's Annex C 3rd-place team routing work in the 2026 World Cup?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The 2026 World Cup has 12 groups of 4. The top 2 from each group advance, plus the 8 best 3rd-place teams — 32 teams into the Round of 32. Which group's 3rd-place team plays which group winner is NOT free-form: it is fixed in advance by FIFA's official Annex C lookup table in the tournament regulations. The table contains an entry for every possible combination of 8 qualifying groups (C(12,8) = 495 entries), mapping each combination deterministically to a routing of 3rd-place teams into specific Round of 32 slots. This simulator encodes all 495 combinations directly from the regulations, so the bracket lookup is exact rather than approximated."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which teams could play in Match 94 (Seattle, July 6 Round of 16) at the 2026 World Cup?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Match 94 in Seattle on July 6, 2026 is the Round of 16 game whose two feeders are Match 81 (winner of Group D vs a 3rd-place team) and Match 82 (winner of Group G vs a 3rd-place team). Which 3rd-place teams fill those slots depends on which 8 groups end up producing the qualifying 3rd-placers (FIFA Annex C). The set of teams that can play in Match 94 is therefore: the winner of Group D, the winner of Group G, or any of the 3rd-place teams from groups eligible to feed Matches 81 or 82. The live simulator computes the probability of each candidate matchup from current Polymarket group-winner odds; click Match 94 in the bracket to see the ranked list."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When and where is the 2026 FIFA World Cup 3rd-place playoff?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The 2026 World Cup 3rd-place playoff is Match 103, scheduled for Saturday, July 18, 2026 at Hard Rock Stadium in Miami. It is contested by the two losing semifinalists (losers of Match 101 in Dallas on July 14 and Match 102 in Atlanta on July 15). The Final (Match 104) follows on Sunday, July 19, 2026 at MetLife Stadium (NY/NJ)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How are the 8 best 3rd-place teams selected at the 2026 FIFA World Cup?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Of the 12 third-place teams, 8 advance to the Round of 32. FIFA ranks them by: (1) more points obtained in the group stage, (2) goal difference, (3) goals scored, (4) fair play points, (5) drawing of lots. The 8 highest-ranked 3rd-place teams qualify; the bottom 4 are eliminated. This simulator uses team strength as a proxy for that ranking (which slightly favors stronger teams in the qualification step), then applies the exact Annex C lookup for routing."
+      }
+    }
+  ]
+}
+</script>
 </head>
 <body class="grain">
 <header>

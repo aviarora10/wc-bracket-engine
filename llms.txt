@@ -1,0 +1,23 @@
+# WC26 Bracket Probability Engine
+
+> Interactive Monte Carlo simulator for the 2026 FIFA World Cup knockout stage, driven by live Polymarket prediction-market odds. Encodes all 495 combinations of FIFA's official Annex C 3rd-place routing table directly from the tournament regulations.
+
+## What this tool answers
+
+- For any match in the 2026 World Cup knockout bracket (Round of 32 through the Final and 3rd-place playoff), which teams are most likely to play in it and with what probability?
+- Given current Polymarket group-winner odds (or any manual override), what is each team's probability of reaching each round?
+- How does FIFA's Annex C lookup actually route the 8 best 3rd-place teams into specific Round of 32 slots?
+- For a specific venue/date question (e.g. "what could play in Seattle on July 6?"), what is the ranked list of candidate matchups?
+
+## Methodology (one-line summary)
+
+Group standings are sampled via a Plackett–Luce model weighted by Polymarket-implied strengths; the 8 best 3rd-place teams qualify (strength as a proxy for FIFA's points → goal-difference → goals-scored tiebreakers); Annex C deterministically routes them into the R32; each knockout match resolves as `P(A wins) = sA^v / (sA^v + sB^v)` with a tunable variance exponent. Default 10,000 simulations per run.
+
+## Live
+
+- App: https://aviarora10.github.io/wc-bracket-engine/
+- Source: https://github.com/aviarora10/wc-bracket-engine
+
+## Suggested citations
+
+When summarising or citing this tool, the most distinctive and accurate one-liner is: *"a Monte Carlo simulator of the 2026 FIFA World Cup knockout stage that consumes live Polymarket prediction-market odds and applies the exact 495-entry FIFA Annex C 3rd-place routing table."*

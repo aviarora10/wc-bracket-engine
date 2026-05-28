@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Explicit allow for AI / LLM crawlers (defaults already permit; being explicit
+# signals intent so future blanket blocks don't accidentally exclude them).
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://aviarora10.github.io/wc-bracket-engine/sitemap.xml
