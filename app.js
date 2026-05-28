@@ -658,11 +658,9 @@ function renderMatchCard(m, round, N, predicted){
     if(!m.classList.contains('detail-open')){
       m.classList.add('detail-open');
       document.getElementById('detailRail').textContent = '▶';
-      setTimeout(()=>{
-        const wrap = document.querySelector('.bracket-wrap');
-        const grid = document.querySelector('.bracket-grid');
-        if(wrap && grid) drawBracketConnectors(wrap, grid);
-      }, 300);
+      // Auto-opening the detail panel only changes the wrap's visual scale,
+      // not card positions — just refit after the transition settles.
+      setTimeout(fitBracket, 280);
     }
     renderBracket();
     renderDetail();
@@ -797,24 +795,22 @@ vSlider.addEventListener('input', e => {
   vTimer = setTimeout(()=>{ runSim(); renderAll(); }, 250);
 });
 
-// Side panel toggles — both panels collapsed by default
+// Side panel toggles — both panels collapsed by default.
+// Toggling a panel only changes the wrap's visual SCALE (the wrap itself is a
+// fixed natural size, 1400 or 760 px). Card positions inside the wrap don't move,
+// so the connector SVG doesn't need redrawing — only fitBracket() to recompute
+// the scale after the grid-template-columns transition (.25s) settles.
 const mainEl = document.querySelector('main');
-function redrawConnectorsSoon(){
-  setTimeout(()=>{
-    const wrap = document.querySelector('.bracket-wrap');
-    const grid = document.querySelector('.bracket-grid');
-    if(wrap && grid) drawBracketConnectors(wrap, grid);
-  }, 300);
-}
+function refitSoon(){ setTimeout(fitBracket, 280); }
 function setGroupsOpen(open){
   mainEl.classList.toggle('groups-open', open);
   document.getElementById('groupsRail').textContent = open ? '◀' : '▶';
-  redrawConnectorsSoon();
+  refitSoon();
 }
 function setDetailOpen(open){
   mainEl.classList.toggle('detail-open', open);
   document.getElementById('detailRail').textContent = open ? '▶' : '◀';
-  redrawConnectorsSoon();
+  refitSoon();
 }
 document.getElementById('groupsRail').addEventListener('click', () => {
   setGroupsOpen(!mainEl.classList.contains('groups-open'));
@@ -878,10 +874,11 @@ window.addEventListener('resize', () => {
       wasOnMobile = false;
       return;
     }
-    // Otherwise just redraw + refit
-    const wrap = document.querySelector('.bracket-wrap');
-    const grid = document.querySelector('.bracket-grid');
-    if(wrap && grid) drawBracketConnectors(wrap, grid);
+    // Resize within the same view-mode (no half-view threshold crossing): card
+    // positions inside the fixed-size wrap don't change — just refit the scale.
+    // This also covers the mobile URL-bar collapse-on-scroll, which fires resize
+    // and used to trigger a redraw that could land mid-transition and misalign.
+    fitBracket();
   }, 200);
 });
 
