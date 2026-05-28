@@ -503,18 +503,30 @@ function fitBracket(){
 
 function drawBracketConnectors(wrap, grid){
   // Defer to the next frame so the latest layout (e.g. after a panel opens/closes)
-  // has settled, then measure in natural (unscaled) units and draw. fitBracket() at
-  // the end reapplies the scale to the whole wrap — SVG included — so the connectors
-  // and the cards scale together and stay aligned at any zoom level.
+  // has settled. Then read the wrap's *currently-applied* transform via
+  // getComputedStyle (which reflects in-flight CSS transitions — wrap has
+  // `transition: transform .2s ease`, so wrap.style.transform alone gives the
+  // animation TARGET, not the value actually visible right now). Divide every
+  // measurement by that scale so the SVG is always drawn in NATURAL (unscaled)
+  // coordinates inside the wrap. Because the SVG is a child of the wrap, the
+  // wrap's transform then scales the SVG and the match cards by the same factor —
+  // they stay aligned at any zoom level, even mid-transition.
   requestAnimationFrame(() => {
-    wrap.style.transform = '';
     const oldSvg = wrap.querySelector('svg.connectors');
     if(oldSvg) oldSvg.remove();
+
+    const tr = getComputedStyle(wrap).transform;
+    let scale = 1;
+    if(tr && tr !== 'none'){
+      const m = tr.match(/matrix\(([^)]+)\)/);
+      if(m) scale = parseFloat(m[1].split(',')[0]) || 1;
+    }
+
     const rect = grid.getBoundingClientRect();
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
     svg.setAttribute('class','connectors');
-    svg.setAttribute('width', rect.width);
-    svg.setAttribute('height', rect.height);
+    svg.setAttribute('width', rect.width / scale);
+    svg.setAttribute('height', rect.height / scale);
     svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:1';
 
     const matches = grid.querySelectorAll('.match[data-match]');
@@ -524,11 +536,11 @@ function drawBracketConnectors(wrap, grid){
       // Skip elements that are hidden (display:none gives zero-size rects)
       if(r.width === 0 && r.height === 0) return;
       posMap[m.dataset.match] = {
-        l: r.left - rect.left,
-        r: r.right - rect.left,
-        cy: (r.top + r.bottom)/2 - rect.top,
-        t: r.top - rect.top,
-        b: r.bottom - rect.top
+        l: (r.left - rect.left) / scale,
+        r: (r.right - rect.left) / scale,
+        cy: ((r.top + r.bottom)/2 - rect.top) / scale,
+        t: (r.top - rect.top) / scale,
+        b: (r.bottom - rect.top) / scale
       };
     });
 
